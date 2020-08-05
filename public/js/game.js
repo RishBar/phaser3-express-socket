@@ -41,6 +41,7 @@ function create() {
   var self = this;
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
+  this.bullets = this.physics.add.group();
   this.socket.on('currentPlayers', function (players) {
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id) {
@@ -68,18 +69,54 @@ function create() {
       }
     });
   });
+  this.socket.on('bulletCollided', function (playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (playerInfo.playerId === otherPlayer.playerId) {
+        otherPlayer.setRotation(playerInfo.rotation);
+        otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+      }
+    });
+  });
+  const gameself = this;
+  this.socket.on('playerShot', function (playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (playerInfo.playerId === otherPlayer.playerId) {
+        var bullet = gameself.physics.add.sprite(playerInfo.shipX, playerInfo.shipY, "bullet")
+        bullet.setScale(0.3)
+        gameself.physics.moveTo(bullet, playerInfo.bulletX,
+          playerInfo.bulletY, 500);
+      }
+    });
+  });
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
+
+  this.physics.add.collider(this.otherPlayers, this.bullets, hitPlayer, null, this);
 }
 
+function hitPlayer(player, bullet) {
+  player.setVelocity(0);
+  bullet.destroy();
+  player.ammoCount = 0;
+  console.log(player);
+  this.ship.score += 100;
+  console.log(this.ship.score);
+  // if (player.health - 10 < 0) {
+  //   player.destroy();
+  //   ship.score += 100;
+  // } else {
+  //   player.health -= 10;
+  // }
+}
 
 function addBullet(pointer) {
   if (this.ship) {
     var bullet = this.physics.add.sprite(this.ship.x, this.ship.y, "bullet")
+    this.bullets.add(bullet);
     bullet.setScale(0.3)
-    // bullet.setVelocity(pointer.x, pointer.y)
     this.physics.moveTo(bullet, pointer.x,
       pointer.y, 500);
+    this.socket.emit('playerShoot', { bulletX: pointer.x, bulletY: pointer.y, shipX: this.ship.x, shipY: this.ship.y });
   }
 }
 
@@ -112,10 +149,6 @@ function update() {
 }
 
 function pointerMove (pointer, self) {
-  // if (!pointer.manager.isOver) return;
-  
-  // Also see alternative method in
-  // <https://codepen.io/samme/pen/gOpPLLx>
   
   var angleToPointer = Phaser.Math.Angle.Between(self.ship.x, self.ship.y, pointer.worldX, pointer.worldY);
   var angleDelta = Phaser.Math.Angle.Wrap(angleToPointer - self.ship.rotation);
