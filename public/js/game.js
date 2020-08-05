@@ -70,9 +70,9 @@ function create() {
     });
   });
   this.socket.on('bulletCollided', function (playerInfo) {
-    if (playerInfo.bullet){
-      playerInfo.bullet.destroy();
-    }
+    var newBullet = playerInfo.bullet;
+    console.log(newBullet)
+    newBullet.destroy();
   });
   const gameself = this;
   this.socket.on('playerShot', function (playerInfo) {
@@ -93,8 +93,8 @@ function create() {
 }
 
 function hitPlayer(player, bullet) {
-  this.socket.emit('bulletHit', { player, bullet });
   bullet.destroy();
+  this.socket.emit('bulletHit', { player, bullet });
   //this.ship.score += 100;
   // if (player.health - 10 < 0) {
   //   player.destroy();

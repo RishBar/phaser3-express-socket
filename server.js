@@ -5,6 +5,7 @@ var io = require('socket.io').listen(server);
 
 var players = {};
 bullet = {};
+hit = {};
 
 app.use(express.static(__dirname + '/public'));
  
@@ -49,7 +50,7 @@ io.on('connection', function (socket) {
   });
   socket.on('bulletHit', function (hitData) {
     hit[socket.id] = {player: hitData.player, bullet: hitData.bullet}
-    // emit a message to all players about the player that moved
+    // emit a message to all players about the bullet
     socket.broadcast.emit('bulletCollided', hit[socket.id]);
   });
 });
