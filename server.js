@@ -4,7 +4,7 @@ var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 
 var players = {};
-bullets = {};
+bullet = {};
 
 app.use(express.static(__dirname + '/public'));
  
@@ -23,6 +23,7 @@ io.on('connection', function (socket) {
   };
   // send the players object to the new player
   socket.emit('currentPlayers', players);
+  socket.emit('bulletLocation', bullet)
   // update all other players of the new player
   socket.broadcast.emit('newPlayer', players[socket.id]);
 
@@ -42,8 +43,9 @@ io.on('connection', function (socket) {
     // emit a message to all players about the player that moved
     socket.broadcast.emit('playerMoved', players[socket.id]);
   });
-  socket.on('bulletShoot', function (bulletData) {
-    bullets
+  socket.on('playerShoot', function (bulletData) {
+    bullet[socket.id] = {playerId: socket.id, bulletX: bulletData.bulletX, bulletY: bulletData.bulletY, shipX: bulletData.shipX, shipY: bulletData.shipY}
+    socket.broadcast.emit('playerShot', bullet[socket.id]);
   })
 });
  

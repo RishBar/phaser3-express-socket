@@ -68,6 +68,17 @@ function create() {
       }
     });
   });
+  const gameself = this;
+  this.socket.on('playerShot', function (playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (playerInfo.playerId === otherPlayer.playerId) {
+        var bullet = gameself.physics.add.sprite(playerInfo.shipX, playerInfo.shipY, "bullet")
+        bullet.setScale(0.3)
+        gameself.physics.moveTo(bullet, playerInfo.bulletX,
+          playerInfo.bulletY, 500);
+      }
+    });
+  });
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
 }
@@ -77,9 +88,9 @@ function addBullet(pointer) {
   if (this.ship) {
     var bullet = this.physics.add.sprite(this.ship.x, this.ship.y, "bullet")
     bullet.setScale(0.3)
-    // bullet.setVelocity(pointer.x, pointer.y)
     this.physics.moveTo(bullet, pointer.x,
       pointer.y, 500);
+    this.socket.emit('playerShoot', { bulletX: pointer.x, bulletY: pointer.y, shipX: this.ship.x, shipY: this.ship.y });
   }
 }
 
@@ -112,10 +123,6 @@ function update() {
 }
 
 function pointerMove (pointer, self) {
-  // if (!pointer.manager.isOver) return;
-  
-  // Also see alternative method in
-  // <https://codepen.io/samme/pen/gOpPLLx>
   
   var angleToPointer = Phaser.Math.Angle.Between(self.ship.x, self.ship.y, pointer.worldX, pointer.worldY);
   var angleDelta = Phaser.Math.Angle.Wrap(angleToPointer - self.ship.rotation);
