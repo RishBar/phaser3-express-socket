@@ -23,7 +23,7 @@ var config = {
 
 var game = new Phaser.Game(config);
 
-var SPEED = 100;
+var SPEED = 150;
 var ROTATION_SPEED = 10 * Math.PI; // 0.5 arc per sec, 2 sec per arc
 var ROTATION_SPEED_DEGREES = Phaser.Math.RadToDeg(ROTATION_SPEED);
 var TOLERANCE = 0.02 * ROTATION_SPEED;
@@ -54,7 +54,7 @@ function create() {
   this.socket.on('newPlayer', function (playerInfo) {
     addOtherPlayers(self, playerInfo)
   });
-  this.socket.on('disconnect', function (playerInfo) {
+  this.socket.on('disconnect', function (playerId) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerId === otherPlayer.playerId) {
         otherPlayer.destroy()
@@ -70,12 +70,9 @@ function create() {
     });
   });
   this.socket.on('bulletCollided', function (playerInfo) {
-    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-      if (playerInfo.playerId === otherPlayer.playerId) {
-        otherPlayer.setRotation(playerInfo.rotation);
-        otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-      }
-    });
+    if (playerInfo.bullet){
+      playerInfo.bullet.destroy();
+    }
   });
   const gameself = this;
   this.socket.on('playerShot', function (playerInfo) {
@@ -90,17 +87,15 @@ function create() {
   });
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
+  sprintKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT)
 
-  this.physics.add.collider(this.otherPlayers, this.bullets, hitPlayer, null, this);
+  this.physics.add.overlap(this.otherPlayers, this.bullets, hitPlayer, null, this);
 }
 
 function hitPlayer(player, bullet) {
-  player.setVelocity(0);
+  this.socket.emit('bulletHit', { player, bullet });
   bullet.destroy();
-  player.ammoCount = 0;
-  console.log(player);
-  this.ship.score += 100;
-  console.log(this.ship.score);
+  //this.ship.score += 100;
   // if (player.health - 10 < 0) {
   //   player.destroy();
   //   ship.score += 100;
@@ -126,7 +121,11 @@ function update() {
     var self = this;
     pointerMove(this.input.activePointer, self);
     if (upKey.isDown) {
-      velocityFromRotation(this.ship.rotation, SPEED, this.ship.body.velocity);
+      if (sprintKey.isDown) {
+        velocityFromRotation(this.ship.rotation, SPEED+200, this.ship.body.velocity);
+      } else {
+        velocityFromRotation(this.ship.rotation, SPEED, this.ship.body.velocity);
+      }
     } else {
       this.ship.setVelocity(0)
     }
