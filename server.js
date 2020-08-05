@@ -45,11 +45,11 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('playerMoved', players[socket.id]);
   });
   socket.on('playerShoot', function (bulletData) {
-    bullet[socket.id] = {playerId: socket.id, bulletX: bulletData.bulletX, bulletY: bulletData.bulletY, shipX: bulletData.shipX, shipY: bulletData.shipY}
+    bullet[socket.id] = {bulletId: bulletData.bulletId, playerId: socket.id, bulletX: bulletData.bulletX, bulletY: bulletData.bulletY, shipX: bulletData.shipX, shipY: bulletData.shipY}
     socket.broadcast.emit('playerShot', bullet[socket.id]);
   });
   socket.on('bulletHit', function (hitData) {
-    hit[socket.id] = {player: hitData.player, bullet: hitData.bullet}
+    hit[socket.id] = {player: hitData.player, bullet: hitData.bullet, bulletId: hitData.bulletId}
     // emit a message to all players about the bullet
     socket.broadcast.emit('bulletCollided', hit[socket.id]);
   });

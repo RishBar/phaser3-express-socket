@@ -71,16 +71,20 @@ function create() {
   });
   this.socket.on('bulletCollided', function (playerInfo) {
     var newBullet = playerInfo.bullet;
-    console.log(newBullet)
-    newBullet.destroy();
+    self.bullets.getChildren().forEach(function (bullet) {
+      if (bullet.bulletId === playerInfo.bulletId) {
+        bullet.destroy();
+      }
+    })
   });
-  const gameself = this;
   this.socket.on('playerShot', function (playerInfo) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerInfo.playerId === otherPlayer.playerId) {
-        var bullet = gameself.physics.add.sprite(playerInfo.shipX, playerInfo.shipY, "bullet")
+        var bullet = self.physics.add.sprite(playerInfo.shipX, playerInfo.shipY, "bullet")
         bullet.setScale(0.3)
-        gameself.physics.moveTo(bullet, playerInfo.bulletX,
+        bullet.bulletId = playerInfo.bulletId
+        self.bullets.add(bullet)
+        self.physics.moveTo(bullet, playerInfo.bulletX,
           playerInfo.bulletY, 500);
       }
     });
@@ -93,8 +97,10 @@ function create() {
 }
 
 function hitPlayer(player, bullet) {
-  bullet.destroy();
-  this.socket.emit('bulletHit', { player, bullet });
+  if (bullet.playerId !== player.id) {
+    this.socket.emit('bulletHit', { player: player, bullet: bullet, bulletId: bullet.bulletId });
+    bullet.destroy();
+  }
   //this.ship.score += 100;
   // if (player.health - 10 < 0) {
   //   player.destroy();
@@ -106,12 +112,14 @@ function hitPlayer(player, bullet) {
 
 function addBullet(pointer) {
   if (this.ship) {
-    var bullet = this.physics.add.sprite(this.ship.x, this.ship.y, "bullet")
-    this.bullets.add(bullet);
+    const bullet = this.physics.add.sprite(this.ship.x, this.ship.y, "bullet")
     bullet.setScale(0.3)
+    bullet.bulletId = Math.floor(Math.random() * 100000)
+    bullet.playerId = this.ship.playerId
+    this.bullets.add(bullet);
     this.physics.moveTo(bullet, pointer.x,
       pointer.y, 500);
-    this.socket.emit('playerShoot', { bulletX: pointer.x, bulletY: pointer.y, shipX: this.ship.x, shipY: this.ship.y });
+    this.socket.emit('playerShoot', { bulletId: bullet.bulletId, bulletX: pointer.x, bulletY: pointer.y, shipX: this.ship.x, shipY: this.ship.y });
   }
 }
 
@@ -162,14 +170,13 @@ function pointerMove (pointer, self) {
 
 
 function addPlayer(self, playerInfo) {
-  console.log("ADD PLAYER being called");
   self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship')
   .setVelocity(SPEED, 0);
+  self.ship.playerId = playerInfo.playerId
 }
 
 
 function addOtherPlayers(self, playerInfo) {
-  console.log("OTHER PLAYER FUNCTION IS BEING CALLLLELDDDDDD");
   const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship');
   otherPlayer.setTint(0xff0000);
   otherPlayer.playerId = playerInfo.playerId;
