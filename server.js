@@ -57,9 +57,6 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('PlayerIsDead', deadPlayerData.playerId)
   })
 });
-socket.on('playerDied', function (deadPlayerData) {
-  socket.broadcast.emit('PlayerIsDead', deadPlayerData.playerId)
-})
  
 server.listen(8081, function () {
   console.log(`Listening on ${server.address().port}`);

@@ -80,9 +80,7 @@ function create() {
     var newBullet = playerInfo.bullet;
     self.bullets.getChildren().forEach(function (bullet) {
       if (bullet.bulletId === playerInfo.bulletId) {
-        console.log(playerInfo.player);
         bullet.destroy();
-        if (self.ship.playerId === playerInfo.player.playerId) {
         console.log(self.ship.playerId, playerInfo.playerId);
         if (playerInfo.playerId === self.ship.playerId) {
           if (self.ship.health - 10 <= 0) {
@@ -118,7 +116,7 @@ function create() {
   })
   gameOverText = this.add.text(10, 200, '', { fontSize: '100px', fill: '#FFFFFF' })
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
-  ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#FFFFFF"});
+  ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#ffffff"});
   
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
