@@ -91,6 +91,7 @@ function create() {
           if (self.ship.health - 10 < 0) {
             gameOverText.setText("GAME OVER!!")
             self.active = false;
+            self.ship.setVisible(false);
           } else {
             self.ship.health -= 10;
             healthScore.setText(`Health: ${self.ship.health}`)
