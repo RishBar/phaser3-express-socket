@@ -119,18 +119,22 @@ function create() {
       }
     })
   })
-  gameOverText = this.add.text(10, 200, '', { fontSize: '100px', fill: '#FFFFFF' })
+  gameOverText = this.add.text(70, 250, '', { fontSize: '100px', fill: '#FFFFFF' })
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
   ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#FFFFFF"});
   scoreText = this.add.text(330, 10, "Score: 0", {fontSize: "32px", fill: "#FFFFFF"});
+  gameOverText.depth = 100;
   gameOverText.scrollFactorX = 0
   gameOverText.scrollFactorY = 0
   healthScore.scrollFactorX = 0
   healthScore.scrollFactorY = 0
+  healthScore.depth = 100;
   ammoText.scrollFactorX = 0
   ammoText.scrollFactorY = 0
+  ammoText.depth = 100;
   scoreText.scrollFactorX = 0
   scoreText.scrollFactorY = 0
+  scoreText.depth = 100;
   
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
@@ -163,6 +167,7 @@ function addBullet(pointer) {
   if (this.ship && this.active === true) {
     if (this.ship.ammoCount > 0) {
       const bullet = this.physics.add.sprite(this.ship.x, this.ship.y, "bullet")
+      bullet.depth = 0;
       bullet.setScale(0.3)
       bullet.bulletId = Math.floor(Math.random() * 100000)
       bullet.playerId = this.ship.playerId
@@ -264,11 +269,12 @@ function pointerMove (pointer, self) {
 function addPlayer(self, playerInfo) {
   self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship')
   .setVelocity(SPEED, 0);
-  self.ship.playerId = playerInfo.playerId
+  self.ship.depth = 1;
+  self.ship.playerId = playerInfo.playerId;
   self.ship.health = 100;
   self.ship.ammoCount = 20;
   self.ship.score = 0;
-  self.cameras.main.startFollow(self.ship)
+  self.cameras.main.startFollow(self.ship);
 }
 
 
