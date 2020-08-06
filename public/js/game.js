@@ -81,13 +81,16 @@ function create() {
     self.bullets.getChildren().forEach(function (bullet) {
       if (bullet.bulletId === playerInfo.bulletId) {
         bullet.destroy();
-        if (self.ship.health - 10 <= 0) {
-          self.ship.health -= 10;
-          gameOverText.setText("GAME OVER!!")
-          // self.ship.destroy()
-        } else {
-          self.ship.health -= 10;
-          healthScore.setText(`Health: ${self.ship.health}`)
+        console.log(self.ship.playerId, playerInfo.playerId);
+        if (playerInfo.playerId === self.ship.playerId) {
+          if (self.ship.health - 10 <= 0) {
+            self.ship.health -= 10;
+            gameOverText.setText("GAME OVER!!")
+            // self.ship.destroy()
+          } else {
+            self.ship.health -= 10;
+            healthScore.setText(`Health: ${self.ship.health}`)
+          }
         }
       }
     })
@@ -104,6 +107,13 @@ function create() {
       }
     });
   });
+  this.socket.on('PlayerIsDead', function(playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (playerInfo === otherPlayer.playerId) {
+        otherPlayer.destroy();
+      }
+    })
+  })
   gameOverText = this.add.text(10, 200, '', { fontSize: '100px', fill: '#FFFFFF' })
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
   ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#ffffff"});
@@ -117,10 +127,11 @@ function create() {
 
 function hitPlayer(player, bullet) {
   if (bullet.playerId !== player.id) {
-    this.socket.emit('bulletHit', { player: player, bullet: bullet, bulletId: bullet.bulletId });
+    this.socket.emit('bulletHit', { playerId: player.playerId, player: player, bullet: bullet, bulletId: bullet.bulletId });
     bullet.destroy();
     if (player.health - 10 <= 0) {
       player.health -= 10;
+      this.socket.emit('playerDied', { playerId: player.playerId });
       player.destroy();
     } else {
       player.health -= 10;
