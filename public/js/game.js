@@ -23,6 +23,7 @@ var config = {
 
 var game = new Phaser.Game(config);
 
+
 var SPEED = 150;
 var ROTATION_SPEED = 10 * Math.PI; // 0.5 arc per sec, 2 sec per arc
 var ROTATION_SPEED_DEGREES = Phaser.Math.RadToDeg(ROTATION_SPEED);
@@ -48,6 +49,7 @@ function preload() {
 
 function create() {
   game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
+  this.cameras.main.setBounds(0, 0, 1000, 1000);
   var self = this;
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
@@ -118,6 +120,14 @@ function create() {
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
   ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#FFFFFF"});
   scoreText = this.add.text(330, 10, "Score: 0", {fontSize: "32px", fill: "#FFFFFF"});
+  gameOverText.scrollFactorX = 0
+  gameOverText.scrollFactorY = 0
+  healthScore.scrollFactorX = 0
+  healthScore.scrollFactorY = 0
+  ammoText.scrollFactorX = 0
+  ammoText.scrollFactorY = 0
+  scoreText.scrollFactorX = 0
+  scoreText.scrollFactorY = 0
   
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
@@ -154,11 +164,11 @@ function addBullet(pointer) {
       bullet.bulletId = Math.floor(Math.random() * 100000)
       bullet.playerId = this.ship.playerId
       this.bullets.add(bullet);
-      this.physics.moveTo(bullet, pointer.x,
-        pointer.y, 500);
+      this.physics.moveTo(bullet, pointer.worldX,
+        pointer.worldY, 500);
       this.ship.ammoCount -= 1;
       ammoText.setText(`Ammo: ${this.ship.ammoCount}`)
-      this.socket.emit('playerShoot', { bulletId: bullet.bulletId, bulletX: pointer.x, bulletY: pointer.y, shipX: this.ship.x, shipY: this.ship.y });
+      this.socket.emit('playerShoot', { bulletId: bullet.bulletId, bulletX: pointer.worldX, bulletY: pointer.worldY, shipX: this.ship.x, shipY: this.ship.y });
     }
   }
 }
@@ -255,6 +265,7 @@ function addPlayer(self, playerInfo) {
   self.ship.health = 100;
   self.ship.ammoCount = 20;
   self.ship.score = 0;
+  self.cameras.main.startFollow(self.ship)
 }
 
 
