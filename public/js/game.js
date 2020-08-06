@@ -47,6 +47,7 @@ function preload() {
 
 
 function create() {
+  game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
   var self = this;
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
