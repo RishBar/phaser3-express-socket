@@ -30,6 +30,10 @@ var TOLERANCE = 0.02 * ROTATION_SPEED;
 
 var velocityFromRotation = Phaser.Physics.Arcade.ArcadePhysics.prototype.velocityFromRotation;
 var ship;
+var ammoText;
+
+var healthScore;
+var gameOverText;
 
 function preload() {
   this.load.image('ship', '../assets/enemy3idle1.png')
@@ -70,9 +74,18 @@ function create() {
     });
   });
   this.socket.on('bulletCollided', function (playerInfo) {
+    var newBullet = playerInfo.bullet;
     self.bullets.getChildren().forEach(function (bullet) {
       if (bullet.bulletId === playerInfo.bulletId) {
         bullet.destroy();
+        if (self.ship.health - 10 <= 0) {
+          self.ship.health -= 10;
+          gameOverText.setText("GAME OVER!!")
+          // self.ship.destroy()
+        } else {
+          self.ship.health -= 10;
+          healthScore.setText(`Health: ${self.ship.health}`)
+        }
       }
     })
   });
@@ -88,25 +101,30 @@ function create() {
       }
     });
   });
+  gameOverText = this.add.text(10, 200, '', { fontSize: '100px', fill: '#FFFFFF' })
+  healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
+  ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#ffffff"});
+  
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
   sprintKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT)
 
   this.physics.add.overlap(this.otherPlayers, this.bullets, hitPlayer, null, this);
+
 }
 
 function hitPlayer(player, bullet) {
   if (bullet.playerId !== player.id) {
     this.socket.emit('bulletHit', { player: player, bullet: bullet, bulletId: bullet.bulletId });
     bullet.destroy();
+    if (player.health - 10 <= 0) {
+      player.health -= 10;
+      player.destroy();
+    } else {
+      player.health -= 10;
+      console.log(player.health);
+    }
   }
-  //this.ship.score += 100;
-  // if (player.health - 10 < 0) {
-  //   player.destroy();
-  //   ship.score += 100;
-  // } else {
-  //   player.health -= 10;
-  // }
 }
 
 function addBullet(pointer) {
@@ -120,6 +138,7 @@ function addBullet(pointer) {
       this.physics.moveTo(bullet, pointer.x,
         pointer.y, 500);
       this.ship.ammoCount -= 1;
+      ammoText.setText(`Ammo: ${this.ship.ammoCount}`)
       this.socket.emit('playerShoot', { bulletId: bullet.bulletId, bulletX: pointer.x, bulletY: pointer.y, shipX: this.ship.x, shipY: this.ship.y });
     }
   }
@@ -175,13 +194,15 @@ function addPlayer(self, playerInfo) {
   self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship')
   .setVelocity(SPEED, 0);
   self.ship.playerId = playerInfo.playerId
-  self.ship.ammoCount = 100;
+  self.ship.health = 100;
+  self.ship.ammoCount = 20;
 }
 
 
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship');
   otherPlayer.setTint(0xff0000);
+  otherPlayer.health = 100;
   otherPlayer.playerId = playerInfo.playerId;
   self.otherPlayers.add(otherPlayer);
 }
