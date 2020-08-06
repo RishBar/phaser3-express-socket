@@ -28,6 +28,9 @@ var ROTATION_SPEED = 10 * Math.PI; // 0.5 arc per sec, 2 sec per arc
 var ROTATION_SPEED_DEGREES = Phaser.Math.RadToDeg(ROTATION_SPEED);
 var TOLERANCE = 0.02 * ROTATION_SPEED;
 
+var healthScore;
+var gameOverText;
+
 var velocityFromRotation = Phaser.Physics.Arcade.ArcadePhysics.prototype.velocityFromRotation;
 var ship;
 var ammoText;
@@ -80,6 +83,8 @@ function create() {
         console.log(playerInfo.player);
         bullet.destroy();
         if (self.ship.playerId === playerInfo.player.playerId) {
+        console.log(self.ship.playerId, playerInfo.playerId);
+        if (playerInfo.playerId === self.ship.playerId) {
           if (self.ship.health - 10 <= 0) {
             self.ship.health -= 10;
             gameOverText.setText("GAME OVER!!")
@@ -118,14 +123,13 @@ function create() {
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
   sprintKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT)
-
   this.physics.add.overlap(this.otherPlayers, this.bullets, hitPlayer, null, this);
 
 }
 
 function hitPlayer(player, bullet) {
   if (bullet.playerId !== player.id) {
-    this.socket.emit('bulletHit', { player: player, bullet: bullet, bulletId: bullet.bulletId });
+    this.socket.emit('bulletHit', { playerId: player.playerId, player: player, bullet: bullet, bulletId: bullet.bulletId });
     bullet.destroy();
     if (player.health - 10 <= 0) {
       player.health -= 10;
@@ -212,6 +216,7 @@ function addPlayer(self, playerInfo) {
 
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship');
+  otherPlayer.health = 100;
   otherPlayer.setTint(0xff0000);
   otherPlayer.health = 100;
   otherPlayer.playerId = playerInfo.playerId;

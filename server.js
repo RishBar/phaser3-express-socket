@@ -49,10 +49,13 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('playerShot', bullet[socket.id]);
   });
   socket.on('bulletHit', function (hitData) {
-    hit[socket.id] = {player: hitData.player, bullet: hitData.bullet, bulletId: hitData.bulletId}
+    hit[socket.id] = {playerId: hitData.playerId, player: hitData.player, bullet: hitData.bullet, bulletId: hitData.bulletId}
     // emit a message to all players about the bullet
     socket.broadcast.emit('bulletCollided', hit[socket.id]);
   });
+  socket.on('playerDied', function (deadPlayerData) {
+    socket.broadcast.emit('PlayerIsDead', deadPlayerData.playerId)
+  })
 });
 socket.on('playerDied', function (deadPlayerData) {
   socket.broadcast.emit('PlayerIsDead', deadPlayerData.playerId)
