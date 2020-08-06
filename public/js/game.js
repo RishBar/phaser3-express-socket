@@ -38,6 +38,10 @@ var ammoText;
 var healthScore;
 var gameOverText;
 
+let strafeLeft = true;
+let strafeRight = true;
+let strafeRotation;
+
 function preload() {
   this.load.image('ship', '../assets/enemy3idle1.png')
   this.load.image('bullet', '../assets/bullet.png')
@@ -86,7 +90,6 @@ function create() {
           if (self.ship.health - 10 <= 0) {
             self.ship.health -= 10;
             gameOverText.setText("GAME OVER!!")
-            // self.ship.destroy()
           } else {
             self.ship.health -= 10;
             healthScore.setText(`Health: ${self.ship.health}`)
@@ -121,8 +124,10 @@ function create() {
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
   sprintKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT)
-  this.physics.add.overlap(this.otherPlayers, this.bullets, hitPlayer, null, this);
+  leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A)
+  rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
 
+  this.physics.add.overlap(this.otherPlayers, this.bullets, hitPlayer, null, this);
 }
 
 function hitPlayer(player, bullet) {
@@ -162,14 +167,53 @@ function update() {
   if (this.ship) {
     var self = this;
     pointerMove(this.input.activePointer, self);
+    this.ship.setVelocity(0);
     if (upKey.isDown) {
+      console.log(this.ship.rotation)
       if (sprintKey.isDown) {
         velocityFromRotation(this.ship.rotation, SPEED+200, this.ship.body.velocity);
-      } else {
+      } 
+      else {
         velocityFromRotation(this.ship.rotation, SPEED, this.ship.body.velocity);
       }
-    } else {
-      this.ship.setVelocity(0)
+    }
+    if (leftKey.isDown){
+      if (strafeLeft === true) {
+        strafeLeft = false;
+        if (this.ship.rotation < 0) {
+          strafeRotation = this.ship.rotation-1.5708
+        } else {
+          strafeRotation = this.ship.rotation+1.5708
+        }
+      }
+      if (sprintKey.isDown) {
+        velocityFromRotation(strafeRotation, SPEED+250, this.ship.body.velocity);
+      } 
+      else {
+        velocityFromRotation(strafeRotation, SPEED+50, this.ship.body.velocity);
+      }
+    }
+    if (!leftKey.isDown) {
+      strafeLeft = true;
+    }
+    if (rightKey.isDown){
+      if (strafeRight === true) {
+        strafeRight = false;
+        if (this.ship.rotation < 0) {
+          strafeRotation = this.ship.rotation+1.5708
+        } else {
+          strafeRotation = this.ship.rotation-1.5708
+        }
+      }
+      if (sprintKey.isDown) {
+        velocityFromRotation(strafeRotation, SPEED+250, this.ship.body.velocity);
+      } 
+      else {
+        velocityFromRotation(strafeRotation, SPEED+50, this.ship.body.velocity);
+      }
+    }
+    if (!rightKey.isDown) {
+      strafeRight = true;
     }
     this.ship.body.debugBodyColor = (this.ship.body.angularVelocity === 0) ? 0xff0000 : 0xffff00;
     // emit player movement
