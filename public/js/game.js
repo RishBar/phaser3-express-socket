@@ -77,14 +77,17 @@ function create() {
     var newBullet = playerInfo.bullet;
     self.bullets.getChildren().forEach(function (bullet) {
       if (bullet.bulletId === playerInfo.bulletId) {
+        console.log(playerInfo.player);
         bullet.destroy();
-        if (self.ship.health - 10 <= 0) {
-          self.ship.health -= 10;
-          gameOverText.setText("GAME OVER!!")
-          // self.ship.destroy()
-        } else {
-          self.ship.health -= 10;
-          healthScore.setText(`Health: ${self.ship.health}`)
+        if (self.ship.playerId === playerInfo.player.playerId) {
+          if (self.ship.health - 10 <= 0) {
+            self.ship.health -= 10;
+            gameOverText.setText("GAME OVER!!")
+            // self.ship.destroy()
+          } else {
+            self.ship.health -= 10;
+            healthScore.setText(`Health: ${self.ship.health}`)
+          }
         }
       }
     })
@@ -101,9 +104,16 @@ function create() {
       }
     });
   });
+  this.socket.on('PlayerIsDead', function(playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (playerInfo === otherPlayer.playerId) {
+        otherPlayer.destroy();
+      }
+    })
+  })
   gameOverText = this.add.text(10, 200, '', { fontSize: '100px', fill: '#FFFFFF' })
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
-  ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#ffffff"});
+  ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#FFFFFF"});
   
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
@@ -119,6 +129,7 @@ function hitPlayer(player, bullet) {
     bullet.destroy();
     if (player.health - 10 <= 0) {
       player.health -= 10;
+      this.socket.emit('playerDied', { playerId: player.playerId });
       player.destroy();
     } else {
       player.health -= 10;
