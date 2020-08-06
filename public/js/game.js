@@ -51,6 +51,7 @@ function create() {
   game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
   this.cameras.main.setBounds(0, 0, 1000, 1000);
   var self = this;
+  this.active = true;
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
   this.bullets = this.physics.add.group();
@@ -89,6 +90,7 @@ function create() {
         if (playerInfo.playerId === self.ship.playerId) {
           if (self.ship.health - 10 < 0) {
             gameOverText.setText("GAME OVER!!")
+            self.active = false;
           } else {
             self.ship.health -= 10;
             healthScore.setText(`Health: ${self.ship.health}`)
@@ -157,7 +159,7 @@ function hitPlayer(player, bullet) {
 }
 
 function addBullet(pointer) {
-  if (this.ship) {
+  if (this.ship && this.active === true) {
     if (this.ship.ammoCount > 0) {
       const bullet = this.physics.add.sprite(this.ship.x, this.ship.y, "bullet")
       bullet.setScale(0.3)
@@ -175,7 +177,7 @@ function addBullet(pointer) {
 
 
 function update() {
-  if (this.ship) {
+  if (this.ship && this.active === true) {
     var self = this;
     pointerMove(this.input.activePointer, self);
     this.ship.setVelocity(0);
