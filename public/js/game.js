@@ -193,6 +193,12 @@ function hitPlayer(player, bullet) {
     if (player.health - 10 <= 0) {
       this.ship.score += 50;
       scoreText.setText(`Score: ${this.ship.score}`)
+      if (this.ship.health + 30 > 100) {
+        this.ship.health = 100;
+      } else {
+        this.ship.health += 30;
+      }
+      healthScore.setText(`Health: ${this.ship.health}`)
       this.socket.emit('playerDied', { playerId: player.playerId });
       player.destroy();
     } else {
