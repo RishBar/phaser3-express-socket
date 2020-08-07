@@ -46,12 +46,14 @@ function preload() {
   this.load.image('ship', '../assets/enemy3idle1.png')
   this.load.image('bullet', '../assets/bullet.png')
   this.load.image('ammo', '../assets/ammo.png')
+  this.load.image('wall', '../assets/wall.png')
 };
 
 
 function create() {
   game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
   this.cameras.main.setBounds(0, 0, 1000, 1000);
+  let wall = this.physics.add.image(200, 300, 'wall')
   var self = this;
   this.active = true;
   this.socket = io();
@@ -59,17 +61,19 @@ function create() {
   this.bullets = this.physics.add.group();
   this.ammoGroup = this.physics.add.group();
   this.playerGroup = this.physics.add.group();
+  this.obstacleGroup = this.physics.add.group();
+  this.obstacleGroup.add(wall)
+  wall.setImmovable();
   this.socket.on('currentPlayers', function (players) {
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id) {
         addPlayer(self, players[id]);
       } else {
-        addOtherPlayers(self, players[id])
+        addOtherPlayers(self, players[id]);
       }
     });
   });
   this.socket.on('addAmmo', function (ammoLocation) {
-    console.log(ammoLocation)
     addAmmo(self, ammoLocation)
   });
   this.socket.on('newPlayer', function (playerInfo) {
@@ -170,6 +174,12 @@ function create() {
 
   this.physics.add.overlap(this.otherPlayers, this.bullets, hitPlayer, null, this);
   this.physics.add.overlap(this.playerGroup, this.ammoGroup, collectAmmo, null, this);
+  this.physics.add.collider(this.playerGroup, this.obstacleGroup);
+  this.physics.add.collider(this.bullets, this.obstacleGroup, hitWall, null, this);
+}
+
+function hitWall (bullet, wall) {
+  bullet.destroy();
 }
 
 function collectAmmo(player, ammo) {
