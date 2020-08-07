@@ -4,14 +4,20 @@ var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 
 var players = {};
-bullet = {};
-hit = {};
+var bullet = {};
+var hit = {};
 
 app.use(express.static(__dirname + '/public'));
  
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
+
+var ammoLocation = {
+    x: Math.floor(Math.random() * 700) + 50,
+    y: Math.floor(Math.random() * 700) + 50,
+    Id: Math.floor(Math.random() * 100000)
+  };
 
 io.on('connection', function (socket) {
   console.log('a user connected');
@@ -24,6 +30,7 @@ io.on('connection', function (socket) {
   };
   // send the players object to the new player
   socket.emit('currentPlayers', players);
+  socket.emit('addAmmo', ammoLocation);
   socket.emit('bulletLocation', bullet)
   // update all other players of the new player
   socket.broadcast.emit('newPlayer', players[socket.id]);
@@ -55,6 +62,18 @@ io.on('connection', function (socket) {
   });
   socket.on('playerDied', function (deadPlayerData) {
     socket.broadcast.emit('PlayerIsDead', deadPlayerData.playerId)
+  })
+  socket.on('ammoCollected', function (ammoData) {
+    socket.broadcast.emit('ammoIsCollected', ammoData.ammoId)
+  })
+  socket.on('newAmmoData', function () {
+    ammoLocation.x = Math.floor(Math.random() * 700) + 50;
+    ammoLocation.y = Math.floor(Math.random() * 700) + 50;
+    ammoLocation.Id = Math.floor(Math.random() * 700) + 50;
+    socket.broadcast.emit('newAmmoAdded', ammoLocation);
+  })
+  socket.on('addNewAmmo', function (newAmmoData) {
+    socket.broadcast.emit('addAmmo', ammoLocation);
   })
 });
  

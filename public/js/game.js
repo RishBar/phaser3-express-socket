@@ -31,6 +31,7 @@ var TOLERANCE = 0.02 * ROTATION_SPEED;
 
 var velocityFromRotation = Phaser.Physics.Arcade.ArcadePhysics.prototype.velocityFromRotation;
 var ship;
+var ammoCrate;
 
 var ammoText;
 var healthScore;
@@ -44,6 +45,7 @@ let strafeRotation;
 function preload() {
   this.load.image('ship', '../assets/enemy3idle1.png')
   this.load.image('bullet', '../assets/bullet.png')
+  this.load.image('ammo', '../assets/ammo.png')
 };
 
 
@@ -55,6 +57,8 @@ function create() {
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
   this.bullets = this.physics.add.group();
+  this.ammoGroup = this.physics.add.group();
+  this.playerGroup = this.physics.add.group();
   this.socket.on('currentPlayers', function (players) {
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id) {
@@ -63,6 +67,10 @@ function create() {
         addOtherPlayers(self, players[id])
       }
     });
+  });
+  this.socket.on('addAmmo', function (ammoLocation) {
+    console.log(ammoLocation)
+    addAmmo(self, ammoLocation)
   });
   this.socket.on('newPlayer', function (playerInfo) {
     addOtherPlayers(self, playerInfo)
@@ -88,7 +96,9 @@ function create() {
         bullet.destroy();
         console.log(self.ship.playerId, playerInfo.playerId);
         if (playerInfo.playerId === self.ship.playerId) {
-          if (self.ship.health - 10 < 0) {
+          if (self.ship.health - 10 <= 0) {
+            self.ship.health -= 10;
+            healthScore.setText(`Health: ${self.ship.health}`)
             gameOverText.setText("GAME OVER!!")
             self.active = false;
             self.ship.setVisible(false);
@@ -118,7 +128,27 @@ function create() {
         otherPlayer.destroy();
       }
     })
-  })
+  });
+  this.socket.on('ammoIsCollected', function(playerInfo) {
+    self.ammoGroup.getChildren().forEach(function (ammo) {
+      console.log(ammo.ammoId)
+      console.log(playerInfo)
+      if (playerInfo === ammo.ammoId) {
+        ammo.destroy();
+        setTimeout(function() { 
+          self.socket.emit('newAmmoData')
+        }, 8000);
+      }
+    })
+  });
+  this.socket.on('newAmmoAdded', function(playerInfo) {
+    console.log("function called");
+    replaceAmmo(self, playerInfo);
+    // const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
+    // ammoCrate.depth = 30;
+    // ammoCrate.ammoId = playerInfo.Id
+    // self.ammoGroup.add(ammoCrate)
+  });
   gameOverText = this.add.text(70, 250, '', { fontSize: '100px', fill: '#FFFFFF' })
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
   ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#FFFFFF"});
@@ -141,15 +171,25 @@ function create() {
   sprintKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT)
   leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A)
   rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
+  backKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S)
 
   this.physics.add.overlap(this.otherPlayers, this.bullets, hitPlayer, null, this);
+  this.physics.add.overlap(this.playerGroup, this.ammoGroup, collectAmmo, null, this);
+}
+
+function collectAmmo(player, ammo) {
+  console.log(ammo.ammoId)
+  this.ship.ammoCount += 10;
+  ammoText.setText(`Ammo: ${this.ship.ammoCount}`)
+  this.socket.emit('ammoCollected', { ammoId: ammo.ammoId });
+  ammo.destroy();
 }
 
 function hitPlayer(player, bullet) {
   if (bullet.playerId !== player.id) {
     this.socket.emit('bulletHit', { playerId: player.playerId, player: player, bullet: bullet, bulletId: bullet.bulletId });
     bullet.destroy();
-    if (player.health - 10 < 0) {
+    if (player.health - 10 <= 0) {
       this.ship.score += 50;
       scoreText.setText(`Score: ${this.ship.score}`)
       this.socket.emit('playerDied', { playerId: player.playerId });
@@ -188,7 +228,6 @@ function update() {
     pointerMove(this.input.activePointer, self);
     this.ship.setVelocity(0);
     if (upKey.isDown) {
-      console.log(this.ship.rotation)
       if (sprintKey.isDown) {
         velocityFromRotation(this.ship.rotation, SPEED+200, this.ship.body.velocity);
       } 
@@ -234,6 +273,22 @@ function update() {
     if (!rightKey.isDown) {
       strafeRight = true;
     }
+    if (backKey.isDown){
+      if (sprintKey.isDown) {
+        if (this.ship.rotation < 0){
+          velocityFromRotation(this.ship.rotation + Math.PI, SPEED+250, this.ship.body.velocity);
+        } else {
+          velocityFromRotation(this.ship.rotation - Math.PI, SPEED+250, this.ship.body.velocity); 
+        }
+      } 
+      else {
+        if (this.ship.rotation < 0){
+          velocityFromRotation(this.ship.rotation + Math.PI, SPEED+50, this.ship.body.velocity);
+        } else {
+          velocityFromRotation(this.ship.rotation - Math.PI, SPEED+50, this.ship.body.velocity); 
+        }
+      }
+    }
     this.ship.body.debugBodyColor = (this.ship.body.angularVelocity === 0) ? 0xff0000 : 0xffff00;
     // emit player movement
     var x = this.ship.x;
@@ -269,19 +324,37 @@ function pointerMove (pointer, self) {
 function addPlayer(self, playerInfo) {
   self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship')
   .setVelocity(SPEED, 0);
-  self.ship.depth = 1;
+  self.ship.depth = 50;
   self.ship.playerId = playerInfo.playerId;
   self.ship.health = 100;
   self.ship.ammoCount = 20;
   self.ship.score = 0;
   self.cameras.main.startFollow(self.ship);
+  self.playerGroup.add(self.ship);
 }
 
 
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship');
   otherPlayer.health = 100;
+  otherPlayer.depth = 50;
   otherPlayer.setTint(0xff0000);
   otherPlayer.playerId = playerInfo.playerId;
   self.otherPlayers.add(otherPlayer);
+}
+
+function replaceAmmo(self, playerInfo) {
+  const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
+  ammoCrate.depth = 30;
+  ammoCrate.ammoId = playerInfo.Id
+  self.ammoGroup.add(ammoCrate)
+  self.socket.emit('addNewAmmo', { ammoId: ammoCrate.ammoId });
+}
+
+function addAmmo(self, playerInfo) {
+  const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
+  ammoCrate.depth = 30;
+  ammoCrate.ammoId = playerInfo.Id
+  console.log(ammoCrate.ammoId)
+  self.ammoGroup.add(ammoCrate)
 }
