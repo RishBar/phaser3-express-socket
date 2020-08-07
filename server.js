@@ -64,7 +64,10 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('PlayerIsDead', deadPlayerData.playerId)
   })
   socket.on('ammoCollected', function (ammoData) {
-    socket.broadcast.emit('ammoIsCollected', ammoData.ammoId)
+    ammoLocation.x = ammoData.x
+    ammoLocation.y = ammoData.y
+    //ammoLocation.Id = Math.floor(Math.random() * 700) + 50;
+    socket.broadcast.emit('ammoIsCollected', { ammoId: ammoData.ammoId, ammoLocation: ammoLocation } )
   })
   socket.on('newAmmoData', function () {
     ammoLocation.x = Math.floor(Math.random() * 700) + 50;
@@ -73,7 +76,7 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('newAmmoAdded', ammoLocation);
   })
   socket.on('addNewAmmo', function (newAmmoData) {
-    socket.broadcast.emit('addAmmo', ammoLocation);
+    socket.broadcast.emit('addAmmo', newAmmoData);
   })
 });
  

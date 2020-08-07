@@ -133,21 +133,16 @@ function create() {
     self.ammoGroup.getChildren().forEach(function (ammo) {
       console.log(ammo.ammoId)
       console.log(playerInfo)
-      if (playerInfo === ammo.ammoId) {
+      if (playerInfo.ammoId === ammo.ammoId) {
         ammo.destroy();
         setTimeout(function() { 
-          self.socket.emit('newAmmoData')
+          replaceAmmo(self, playerInfo.ammoLocation);
         }, 8000);
       }
     })
   });
   this.socket.on('newAmmoAdded', function(playerInfo) {
-    console.log("function called");
     replaceAmmo(self, playerInfo);
-    // const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
-    // ammoCrate.depth = 30;
-    // ammoCrate.ammoId = playerInfo.Id
-    // self.ammoGroup.add(ammoCrate)
   });
   gameOverText = this.add.text(70, 250, '', { fontSize: '100px', fill: '#FFFFFF' })
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
@@ -178,11 +173,17 @@ function create() {
 }
 
 function collectAmmo(player, ammo) {
+  var self = this;
   console.log(ammo.ammoId)
   this.ship.ammoCount += 10;
   ammoText.setText(`Ammo: ${this.ship.ammoCount}`)
-  this.socket.emit('ammoCollected', { ammoId: ammo.ammoId });
+  var newX = Math.floor(Math.random() * 700) + 50;
+  var newY = Math.floor(Math.random() * 700) + 50;
+  this.socket.emit('ammoCollected', { x: newX, y: newY, ammoId: ammo.ammoId });
   ammo.destroy();
+  setTimeout(function() { 
+    replaceAmmo(self, {x: newX, y: newY, Id: ammo.ammoId});
+  }, 8000);
 }
 
 function hitPlayer(player, bullet) {
@@ -346,15 +347,17 @@ function addOtherPlayers(self, playerInfo) {
 function replaceAmmo(self, playerInfo) {
   const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
   ammoCrate.depth = 30;
-  ammoCrate.ammoId = playerInfo.Id
+  //ammoCrate.ammoId = playerInfo.Id
   self.ammoGroup.add(ammoCrate)
-  self.socket.emit('addNewAmmo', { ammoId: ammoCrate.ammoId });
+  //self.socket.emit('addNewAmmo', { x: playerInfo.x, y: playerInfo.y, Id: playerInfo.Id });
 }
 
 function addAmmo(self, playerInfo) {
   const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
   ammoCrate.depth = 30;
   ammoCrate.ammoId = playerInfo.Id
+  ammoCrate.x = playerInfo.x
+  ammoCrate.y = playerInfo.y
   console.log(ammoCrate.ammoId)
   self.ammoGroup.add(ammoCrate)
 }
