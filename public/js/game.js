@@ -74,7 +74,7 @@ function create() {
     });
   });
   this.socket.on('addAmmo', function (ammoLocation) {
-    addAmmo(self, ammoLocation)
+    addAmmo(self, ammoLocation, 10)
   });
   this.socket.on('newPlayer', function (playerInfo) {
     addOtherPlayers(self, playerInfo)
@@ -106,6 +106,8 @@ function create() {
             gameOverText.setText("GAME OVER!!")
             self.active = false;
             self.ship.setVisible(false);
+            // var ID = Math.floor(Math.random() * 100000)
+            // replaceAmmo(self, {x: 500, y: 500, Id: ID});
           } else {
             self.ship.health -= 10;
             healthScore.setText(`Health: ${self.ship.health}`)
@@ -139,14 +141,26 @@ function create() {
       console.log(playerInfo)
       if (playerInfo.ammoId === ammo.ammoId) {
         ammo.destroy();
-        setTimeout(function() { 
-          replaceAmmo(self, playerInfo.ammoLocation);
-        }, 8000);
+        if (ammo.ammoId === 1){
+          setTimeout(function() { 
+            replaceAmmo(self, playerInfo.ammoLocation, 10);
+          }, 8000);
+        }
       }
     })
   });
+  this.socket.on('createNewAmmo', function(playerInfo) {
+    replaceAmmo(self, {x: playerInfo.x, y: playerInfo.y, Id: playerInfo.Id}, playerInfo.count);
+  });
   this.socket.on('newAmmoAdded', function(playerInfo) {
-    replaceAmmo(self, playerInfo);
+    replaceAmmo(self, {x: 500, y: 50, Id: newId});
+  });
+  this.socket.on('updateAmmoCount', function(playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (playerInfo.playerId === otherPlayer.playerId) {
+        otherPlayer.ammoCount = playerInfo.count;
+      }
+    })
   });
   gameOverText = this.add.text(70, 250, '', { fontSize: '100px', fill: '#FFFFFF' })
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
@@ -178,31 +192,40 @@ function create() {
   this.physics.add.collider(this.bullets, this.obstacleGroup, hitWall, null, this);
 }
 
-function hitWall (bullet, wall) {
+function hitWall (bullet) {
   bullet.destroy();
 }
 
 function collectAmmo(player, ammo) {
-  var self = this;
-  console.log(ammo.ammoId)
-  this.ship.ammoCount += 10;
-  ammoText.setText(`Ammo: ${this.ship.ammoCount}`)
-  var newX = Math.floor(Math.random() * 700) + 50;
-  var newY = Math.floor(Math.random() * 700) + 50;
-  this.socket.emit('ammoCollected', { x: newX, y: newY, ammoId: ammo.ammoId });
-  ammo.destroy();
-  setTimeout(function() { 
-    replaceAmmo(self, {x: newX, y: newY, Id: ammo.ammoId});
-  }, 8000);
+  if (this.active === true) {
+    var self = this;
+    console.log(ammo.ammoId);
+    console.log(ammo.count);
+    this.ship.ammoCount += ammo.count;
+    ammoText.setText(`Ammo: ${this.ship.ammoCount}`);
+    var newX = Math.floor(Math.random() * 700) + 50;
+    var newY = Math.floor(Math.random() * 700) + 50;
+    this.socket.emit('ammoCollected', { x: newX, y: newY, ammoId: ammo.ammoId });
+    ammo.destroy();
+    if (ammo.ammoId === 1) {
+      setTimeout(function() { 
+        replaceAmmo(self, {x: newX, y: newY, Id: ammo.ammoId}, 10);
+      }, 8000);
+    }
+  }
 }
 
 function hitPlayer(player, bullet) {
   if (bullet.playerId !== player.id) {
     this.socket.emit('bulletHit', { playerId: player.playerId, player: player, bullet: bullet, bulletId: bullet.bulletId });
     bullet.destroy();
+    console.log(player.health);
     if (player.health - 10 <= 0) {
       this.ship.score += 50;
       scoreText.setText(`Score: ${this.ship.score}`)
+      var newAmmoID = Math.floor(Math.random() * 100000)
+      replaceAmmo(this, {x: player.x, y: player.y, Id: newAmmoID}, player.ammoCount);
+      this.socket.emit('ammoDropped', {xPos: xPos, yPos: yPos, ammoId: newAmmoID, ammoCount: player.ammoCount})
       if (this.ship.health + 30 > 100) {
         this.ship.health = 100;
       } else {
@@ -215,7 +238,6 @@ function hitPlayer(player, bullet) {
       player.health -= 10;
       this.ship.score += 10;
       scoreText.setText(`Score: ${this.ship.score}`)
-      console.log(player.health);
     }
   }
 }
@@ -232,6 +254,7 @@ function addBullet(pointer) {
       this.physics.moveTo(bullet, pointer.worldX,
         pointer.worldY, 500);
       this.ship.ammoCount -= 1;
+      this.socket.emit('countAmmo', {Id: this.ship.playerId, count: this.ship.ammoCount});
       ammoText.setText(`Ammo: ${this.ship.ammoCount}`)
       this.socket.emit('playerShoot', { bulletId: bullet.bulletId, bulletX: pointer.worldX, bulletY: pointer.worldY, shipX: this.ship.x, shipY: this.ship.y });
     }
@@ -354,26 +377,32 @@ function addPlayer(self, playerInfo) {
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship');
   otherPlayer.health = 100;
+  otherPlayer.ammoCount = playerInfo.count;
   otherPlayer.depth = 50;
   otherPlayer.setTint(0xff0000);
   otherPlayer.playerId = playerInfo.playerId;
   self.otherPlayers.add(otherPlayer);
 }
 
-function replaceAmmo(self, playerInfo) {
-  const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
-  ammoCrate.depth = 30;
-  //ammoCrate.ammoId = playerInfo.Id
-  self.ammoGroup.add(ammoCrate)
-  //self.socket.emit('addNewAmmo', { x: playerInfo.x, y: playerInfo.y, Id: playerInfo.Id });
-}
-
-function addAmmo(self, playerInfo) {
+function replaceAmmo(self, playerInfo, ammoAmmount) {
   const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
   ammoCrate.depth = 30;
   ammoCrate.ammoId = playerInfo.Id
   ammoCrate.x = playerInfo.x
   ammoCrate.y = playerInfo.y
-  console.log(ammoCrate.ammoId)
+  ammoCrate.count = ammoAmmount;
+  console.log(playerInfo.x)
+  console.log(playerInfo.y)
+  self.ammoGroup.add(ammoCrate)
+  //self.socket.emit('addNewAmmo', { x: playerInfo.x, y: playerInfo.y, Id: playerInfo.Id });
+}
+
+function addAmmo(self, playerInfo, ammoAmmount) {
+  const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
+  ammoCrate.depth = 30;
+  ammoCrate.ammoId = playerInfo.Id
+  ammoCrate.x = playerInfo.x
+  ammoCrate.y = playerInfo.y
+  ammoCrate.count = ammoAmmount;
   self.ammoGroup.add(ammoCrate)
 }

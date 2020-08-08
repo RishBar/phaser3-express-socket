@@ -16,7 +16,7 @@ app.get('/', function (req, res) {
 var ammoLocation = {
     x: Math.floor(Math.random() * 700) + 50,
     y: Math.floor(Math.random() * 700) + 50,
-    Id: Math.floor(Math.random() * 100000)
+    Id: 1
   };
 
 io.on('connection', function (socket) {
@@ -26,6 +26,7 @@ io.on('connection', function (socket) {
     rotation: 0,
     x: Math.floor(Math.random() * 700) + 50,
     y: Math.floor(Math.random() * 500) + 50,
+    count: 20,
     playerId: socket.id
   };
   // send the players object to the new player
@@ -77,6 +78,13 @@ io.on('connection', function (socket) {
   })
   socket.on('addNewAmmo', function (newAmmoData) {
     socket.broadcast.emit('addAmmo', newAmmoData);
+  })
+  socket.on('ammoDropped', function (droppedAmmoData) {
+    socket.broadcast.emit('createNewAmmo', {x: droppedAmmoData.xPos, y: droppedAmmoData.yPos, Id: droppedAmmoData.ammoId, count: droppedAmmoData.ammoCount});
+  })
+  socket.on('countAmmo', function (countAmmoData) {
+    players[socket.id].count = countAmmoData.count;
+    socket.broadcast.emit('updateAmmoCount', {playerId: countAmmoData.Id, count: countAmmoData.count});
   })
 });
  
