@@ -44,8 +44,6 @@ let strafeRotation;
 
 var teleport = true;
 
-var tempInv = true;
-
 function preload() {
   this.load.image('ship', '../assets/player.png')
   this.load.image('bullet', '../assets/bullet.png')
