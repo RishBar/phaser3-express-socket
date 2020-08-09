@@ -76,9 +76,6 @@ io.on('connection', function (socket) {
     ammoLocation.Id = Math.floor(Math.random() * 700) + 50;
     socket.broadcast.emit('newAmmoAdded', ammoLocation);
   })
-  socket.on('addNewAmmo', function (newAmmoData) {
-    socket.broadcast.emit('addAmmo', newAmmoData);
-  })
   socket.on('ammoDropped', function (droppedAmmoData) {
     socket.broadcast.emit('createNewAmmo', {x: droppedAmmoData.xPos, y: droppedAmmoData.yPos, Id: droppedAmmoData.ammoId, count: droppedAmmoData.ammoCount});
   })

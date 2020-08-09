@@ -1,3 +1,4 @@
-/node_modules
-/public/assets/ammo.pdn
-/public/assets/background.pdn
+node_modules
+public/assets/ammo.pdn
+public/assets/background.pdn
+public/assets/walls_gray.png

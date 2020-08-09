@@ -5,8 +5,8 @@
 
 var config = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: 1024,
+  height: 720,
   physics: {
     default: "arcade",
     arcade: {
@@ -42,18 +42,74 @@ let strafeLeft = true;
 let strafeRight = true;
 let strafeRotation;
 
+var teleport = true;
+
+var tempInv = true;
+
 function preload() {
-  this.load.image('ship', '../assets/enemy3idle1.png')
+  this.load.image('ship', '../assets/player.png')
   this.load.image('bullet', '../assets/bullet.png')
   this.load.image('ammo', '../assets/ammo.png')
-  this.load.image('wall', '../assets/wall.png')
+  this.load.image('largerAmmo', '../assets/ammo_larger.png')
+  this.load.image('wall', '../assets/walls.png')
+  this.load.image('background', '../assets/background.png')
+  this.load.image('train', '../assets/train.png')
+  this.load.image('squareCollision', '../assets/square.png')
+  this.load.image('wallCollision', '../assets/wall_collision.png')
+  this.load.image('wallCollision2', '../assets/wall_collision2.png')
+  this.load.image('wallCollision3', '../assets/wall_collision3.png')
+  this.load.image('wallCollision4', '../assets/wall_collision4.png')
+  this.load.image('wallCollision5', '../assets/wall_collision5.png')
+  this.load.image('wallCollision6', '../assets/wall_collision6.png')
+  this.load.image('wallCollision7', '../assets/wall_collision7.png')
+  this.load.image('wallCollision8', '../assets/wall_collision8.png')
+  this.load.image('wallCollision9', '../assets/wall_collision9.png')
+  this.load.image('wallCollision10', '../assets/wall_collision10.png')
+  this.load.image('wallCollision11', '../assets/wall_collision11.png')
+  this.load.image('wallCollision12', '../assets/wall_collision12.png')
+  this.load.image('wallCollision13', '../assets/wall_collision13.png')
+  this.load.image('wallCollision14', '../assets/wall_collision14.png')
+  this.load.image('wallCollision15', '../assets/wall_collision15.png')
 };
 
 
 function create() {
   game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
-  this.cameras.main.setBounds(0, 0, 1000, 1000);
-  let wall = this.physics.add.image(200, 300, 'wall')
+  this.cameras.main.setBounds(0, 0, 1506, 1506);
+  const background = this.add.image(750, 750, 'background')
+  background.depth = 0;
+  const wall = this.physics.add.image(750, 750, 'wall')
+  const train = this.physics.add.image(80, 120, 'train')
+  const desk1 = this.physics.add.image(1026, 1436, 'squareCollision')
+  const desk2 = this.physics.add.image(896, 1276, 'squareCollision')
+  const desk3 = this.physics.add.image(1026, 1050, 'squareCollision')
+  const table1 = this.physics.add.image(926, 705, 'squareCollision')
+  const table2 = this.physics.add.image(926, 475, 'squareCollision')
+  const table3 = this.physics.add.image(1340, 155, 'squareCollision')
+  const wall1 = this.physics.add.image(560, 75, 'wallCollision')
+  const wall2 = this.physics.add.image(685, 75, 'wallCollision')
+  const wall3 = this.physics.add.image(525, 575, 'wallCollision2')
+  const wall4 = this.physics.add.image(685, 475, 'wallCollision3')
+  const wall5 = this.physics.add.image(349, 815, 'wallCollision4')
+  const wall6 = this.physics.add.image(685, 785, 'wallCollision5')
+  const wall7 = this.physics.add.image(815, 525, 'wallCollision6')
+  const wall8 = this.physics.add.image(974, 815, 'wallCollision7')
+  const wall9 = this.physics.add.image(944, 591, 'wallCollision8')
+  const wall10 = this.physics.add.image(944, 365, 'wallCollision8')
+  const wall11 = this.physics.add.image(1040, 50, 'wallCollision5')
+  const wall12 = this.physics.add.image(1040, 300, 'wallCollision5')
+  const wall13 = this.physics.add.image(1390, 590, 'wallCollision9')
+  const wall14 = this.physics.add.image(1390, 1135, 'wallCollision10')
+  const wall15 = this.physics.add.image(1100, 1055, 'wallCollision11')
+  const wall16 = this.physics.add.image(1100, 1405, 'wallCollision11')
+  const wall17 = this.physics.add.image(1005, 975, 'wallCollision12')
+  const wall18 = this.physics.add.image(540, 1490, 'wallCollision13')
+  const wall19 = this.physics.add.image(815, 1215, 'wallCollision14')
+  const wall20 = this.physics.add.image(300, 1375, 'wallCollision11')
+  const wall21 = this.physics.add.image(300, 1040, 'wallCollision11')
+  const wall22 = this.physics.add.image(445, 975, 'wallCollision15')
+  const wall23 = this.physics.add.image(65, 975, 'wallCollision15')
+  const wall24 = this.physics.add.image(15, 1230, 'wallCollision11')
   var self = this;
   this.active = true;
   this.socket = io();
@@ -62,8 +118,78 @@ function create() {
   this.ammoGroup = this.physics.add.group();
   this.playerGroup = this.physics.add.group();
   this.obstacleGroup = this.physics.add.group();
-  this.obstacleGroup.add(wall)
-  wall.setImmovable();
+  this.obstacleGroup.add(train)
+  this.obstacleGroup.add(desk1)
+  this.obstacleGroup.add(desk2)
+  this.obstacleGroup.add(desk3)
+  this.obstacleGroup.add(table1)
+  this.obstacleGroup.add(table2)
+  this.obstacleGroup.add(table3)
+  this.obstacleGroup.add(wall1)
+  this.obstacleGroup.add(wall2)
+  this.obstacleGroup.add(wall3)
+  this.obstacleGroup.add(wall4)
+  this.obstacleGroup.add(wall5)
+  this.obstacleGroup.add(wall6)
+  this.obstacleGroup.add(wall7)
+  this.obstacleGroup.add(wall8)
+  this.obstacleGroup.add(wall9)
+  this.obstacleGroup.add(wall10)
+  this.obstacleGroup.add(wall11)
+  this.obstacleGroup.add(wall12)
+  this.obstacleGroup.add(wall13)
+  this.obstacleGroup.add(wall14)
+  this.obstacleGroup.add(wall15)
+  this.obstacleGroup.add(wall16)
+  this.obstacleGroup.add(wall17)
+  this.obstacleGroup.add(wall18)
+  this.obstacleGroup.add(wall19)
+  this.obstacleGroup.add(wall20)
+  this.obstacleGroup.add(wall21)
+  this.obstacleGroup.add(wall22)
+  this.obstacleGroup.add(wall23)
+  this.obstacleGroup.add(wall24)
+  desk1.setScale(0.6);
+  desk1.setImmovable();
+  desk2.setScale(0.6);
+  desk2.setImmovable();
+  desk3.setScale(0.6);
+  desk3.setImmovable();
+  table1.setScale(0.8);
+  table1.setImmovable();
+  table2.setScale(0.8);
+  table2.setImmovable();
+  table3.setScale(0.8);
+  table3.setImmovable();
+  wall1.setImmovable();
+  wall2.setImmovable();
+  wall3.setImmovable();
+  wall4.setImmovable();
+  wall5.setImmovable();
+  wall6.setImmovable();
+  wall7.setImmovable();
+  wall8.setImmovable();
+  wall9.setImmovable();
+  wall10.setImmovable();
+  wall11.setImmovable();
+  wall12.setImmovable();
+  wall13.setImmovable();
+  wall14.setImmovable();
+  wall15.setImmovable();
+  wall16.setImmovable();
+  wall17.setImmovable();
+  wall18.setImmovable();
+  wall19.setImmovable();
+  wall20.setImmovable();
+  wall21.setImmovable();
+  wall21.displayHeight = 150;
+  wall22.setImmovable();
+  wall23.setImmovable();
+  wall23.displayWidth = 120;
+  wall24.setImmovable();
+  wall24.displayHeight = 480;
+  train.setImmovable();
+  train.setVisible(false);
   this.socket.on('currentPlayers', function (players) {
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id) {
@@ -162,10 +288,10 @@ function create() {
       }
     })
   });
-  gameOverText = this.add.text(70, 250, '', { fontSize: '100px', fill: '#FFFFFF' })
+  gameOverText = this.add.text(190, 310, '', { fontSize: '100px', fill: '#FFFFFF' })
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
-  ammoText = this.add.text(630, 10, "Ammo: 20", {fontSize: "32px", fill: "#FFFFFF"});
-  scoreText = this.add.text(330, 10, "Score: 0", {fontSize: "32px", fill: "#FFFFFF"});
+  ammoText = this.add.text(860, 10, "Ammo: 20", {fontSize: "32px", fill: "#FFFFFF"});
+  scoreText = this.add.text(460, 10, "Score: 0", {fontSize: "32px", fill: "#FFFFFF"});
   gameOverText.depth = 100;
   gameOverText.scrollFactorX = 0
   gameOverText.scrollFactorY = 0
@@ -190,6 +316,39 @@ function create() {
   this.physics.add.overlap(this.playerGroup, this.ammoGroup, collectAmmo, null, this);
   this.physics.add.collider(this.playerGroup, this.obstacleGroup);
   this.physics.add.collider(this.bullets, this.obstacleGroup, hitWall, null, this);
+  this.physics.add.collider(this.ammoGroup, this.obstacleGroup, pickDifferentLocation, null, this);
+  this.physics.add.overlap(this.playerGroup, this.obstacleGroup, resetPlayerLocation, null, this);
+}
+
+function resetPlayerLocation () {
+  if (teleport === true) {
+    console.log("player collided");
+    console.log(teleport)
+    this.ship.x = Math.floor(Math.random() * 700) + 50;
+    this.ship.y = Math.floor(Math.random() * 700) + 50;
+  }
+}
+
+function pickDifferentLocation (ammo) {
+  if (ammo.ammoId === 1) {
+    console.log("ammo has been collided")
+    console.log(ammo)
+    ammo.destroy();
+    var newX;
+    var newY;
+    if (ammo.x + 50 < 1500) {
+      newX = ammo.x + 50
+    } else {
+      newX = ammo.x - 50
+    }
+    if (ammo.y + 50 < 1500) {
+      newY = ammo.y + 50
+    } else {
+      newY = ammo.y - 50
+    }
+    replaceAmmo(this, {x: newX, y: newY, Id: 1}, 10)
+    //this.socket.emit('addNewAmmo', {x: newX, y: newY, Id: 1, ammoCount: 10})
+  }
 }
 
 function hitWall (bullet) {
@@ -225,7 +384,7 @@ function hitPlayer(player, bullet) {
       scoreText.setText(`Score: ${this.ship.score}`)
       var newAmmoID = Math.floor(Math.random() * 100000)
       replaceAmmo(this, {x: player.x, y: player.y, Id: newAmmoID}, player.ammoCount);
-      this.socket.emit('ammoDropped', {xPos: xPos, yPos: yPos, ammoId: newAmmoID, ammoCount: player.ammoCount})
+      this.socket.emit('ammoDropped', {xPos: player.x, yPos: player.y, ammoId: newAmmoID, ammoCount: player.ammoCount})
       if (this.ship.health + 30 > 100) {
         this.ship.health = 100;
       } else {
@@ -268,6 +427,9 @@ function update() {
     pointerMove(this.input.activePointer, self);
     this.ship.setVelocity(0);
     if (upKey.isDown) {
+      if (teleport === true) {
+        teleport = false;
+      }
       if (sprintKey.isDown) {
         velocityFromRotation(this.ship.rotation, SPEED+200, this.ship.body.velocity);
       } 
@@ -276,6 +438,9 @@ function update() {
       }
     }
     if (leftKey.isDown){
+      if (teleport === true) {
+        teleport = false;
+      }
       if (strafeLeft === true) {
         strafeLeft = false;
         if (this.ship.rotation < 0) {
@@ -285,6 +450,9 @@ function update() {
         }
       }
       if (sprintKey.isDown) {
+        if (teleport === true) {
+          teleport = false;
+        }
         velocityFromRotation(strafeRotation, SPEED+250, this.ship.body.velocity);
       } 
       else {
@@ -295,6 +463,9 @@ function update() {
       strafeLeft = true;
     }
     if (rightKey.isDown){
+      if (teleport === true) {
+        teleport = false;
+      }
       if (strafeRight === true) {
         strafeRight = false;
         if (this.ship.rotation < 0) {
@@ -314,6 +485,9 @@ function update() {
       strafeRight = true;
     }
     if (backKey.isDown){
+      if (teleport === true) {
+        teleport = false;
+      }
       if (sprintKey.isDown) {
         if (this.ship.rotation < 0){
           velocityFromRotation(this.ship.rotation + Math.PI, SPEED+250, this.ship.body.velocity);
@@ -364,13 +538,13 @@ function pointerMove (pointer, self) {
 function addPlayer(self, playerInfo) {
   self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship')
   .setVelocity(SPEED, 0);
+  self.playerGroup.add(self.ship);
   self.ship.depth = 50;
   self.ship.playerId = playerInfo.playerId;
   self.ship.health = 100;
   self.ship.ammoCount = 20;
   self.ship.score = 0;
   self.cameras.main.startFollow(self.ship);
-  self.playerGroup.add(self.ship);
 }
 
 
@@ -385,7 +559,11 @@ function addOtherPlayers(self, playerInfo) {
 }
 
 function replaceAmmo(self, playerInfo, ammoAmmount) {
-  const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
+  let ammoString = 'ammo';
+  if (ammoAmmount > 20) {
+    ammoString = 'largerAmmo'
+  }
+  const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, ammoString)
   ammoCrate.depth = 30;
   ammoCrate.ammoId = playerInfo.Id
   ammoCrate.x = playerInfo.x
@@ -394,15 +572,25 @@ function replaceAmmo(self, playerInfo, ammoAmmount) {
   console.log(playerInfo.x)
   console.log(playerInfo.y)
   self.ammoGroup.add(ammoCrate)
+  if (ammoAmmount < 10) {
+    ammoCrate.setScale(0.5);
+  }
   //self.socket.emit('addNewAmmo', { x: playerInfo.x, y: playerInfo.y, Id: playerInfo.Id });
 }
 
 function addAmmo(self, playerInfo, ammoAmmount) {
-  const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, 'ammo')
+  let ammoString = 'ammo';
+  if (ammoAmmount > 20) {
+    ammoString = 'largerAmmo'
+  }
+  const ammoCrate = self.add.image(playerInfo.x, playerInfo.y, ammoString)
   ammoCrate.depth = 30;
   ammoCrate.ammoId = playerInfo.Id
   ammoCrate.x = playerInfo.x
   ammoCrate.y = playerInfo.y
   ammoCrate.count = ammoAmmount;
   self.ammoGroup.add(ammoCrate)
+  if (ammoAmmount < 10) {
+    ammoCrate.setScale(0.5);
+  }
 }
