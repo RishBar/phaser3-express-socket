@@ -73,6 +73,8 @@ function preload() {
   this.load.image('wallCollision13', '../assets/wall_collision13.png')
   this.load.image('wallCollision14', '../assets/wall_collision14.png')
   this.load.image('wallCollision15', '../assets/wall_collision15.png')
+  this.load.image('border', '../assets/border.png')
+  this.load.image('border2', '../assets/border2.png')
 };
 
 
@@ -81,7 +83,7 @@ function create() {
   this.cameras.main.setBounds(0, 0, 1506, 1506);
   const background = this.add.image(750, 750, 'background')
   background.depth = 0;
-  // let resetButton = this.add.image(190, 310, 'reset');
+
   const wall = this.physics.add.image(750, 750, 'wall')
   const train = this.physics.add.image(80, 120, 'train')
   const desk1 = this.physics.add.image(1026, 1436, 'squareCollision')
@@ -114,6 +116,10 @@ function create() {
   const wall22 = this.physics.add.image(445, 975, 'wallCollision15')
   const wall23 = this.physics.add.image(65, 975, 'wallCollision15')
   const wall24 = this.physics.add.image(15, 1230, 'wallCollision11')
+  const border1 = this.physics.add.image(750, 1506, 'border')
+  const border2 = this.physics.add.image(750, 0, 'border')
+  const border3 = this.physics.add.image(1506, 750, 'border2')
+  const border4 = this.physics.add.image(0, 750, 'border2')
   var self = this;
   this.active = true;
   this.socket = io();
@@ -153,6 +159,10 @@ function create() {
   this.obstacleGroup.add(wall22)
   this.obstacleGroup.add(wall23)
   this.obstacleGroup.add(wall24)
+  this.obstacleGroup.add(border1)
+  this.obstacleGroup.add(border2)
+  this.obstacleGroup.add(border3)
+  this.obstacleGroup.add(border4)
   desk1.setScale(0.6);
   desk1.setImmovable();
   desk2.setScale(0.6);
@@ -192,6 +202,10 @@ function create() {
   wall23.displayWidth = 120;
   wall24.setImmovable();
   wall24.displayHeight = 480;
+  border1.setImmovable();
+  border2.setImmovable();
+  border3.setImmovable();
+  border4.setImmovable();
   train.setImmovable();
   train.setVisible(false);
   this.socket.on('currentPlayers', function (players) {
@@ -239,8 +253,6 @@ function create() {
             self.resetButton.setVisible(true);
             self.active = false;
             self.ship.setVisible(false);
-            // var ID = Math.floor(Math.random() * 100000)
-            // replaceAmmo(self, {x: 500, y: 500, Id: ID});
           } else {
             self.ship.health -= 10;
             healthScore.setText(`Health: ${self.ship.health}`)
@@ -324,26 +336,15 @@ function create() {
   this.resetButton.setVisible(false);
 
   this.resetButton.on('pointerover', () => {
-    this.resetButton = this.add.image(520, 510, 'resetHovered')
-    this.resetButton.scrollFactorX = 0
-    this.resetButton.scrollFactorY = 0
-    this.resetButton.depth = 100
+    this.resetButton.setTexture('resetHovered')
 })
   this.resetButton.on('pointerout', () => {
-    this.resetButton = this.add.image(520, 510, 'reset')
-    this.resetButton.scrollFactorX = 0
-    this.resetButton.scrollFactorY = 0
-    this.resetButton.depth = 100
+    this.resetButton.setTexture('reset')
 })
   this.resetButton.on('pointerdown', () => {
-    this.resetButton = this.add.image(520, 510, 'resetPressed');
-    this.resetButton.scrollFactorX = 0;
-    this.resetButton.scrollFactorY = 0;
-    this.resetButton.depth = 100;
+    this.resetButton.setTexture('resetPressed')
   });
   this.resetButton.on('pointerup', () => {
-    this.resetButton.disableInteractive();
-    this.resetButton.setVisible(false);
     var newPlayerX = Math.floor(Math.random() * 700) + 50;
     var newPlayerY = Math.floor(Math.random() * 700) + 50;
     resetPlayer(self, {x: newPlayerX, y: newPlayerY});
@@ -354,6 +355,8 @@ function create() {
     scoreText.setText("Score: 0");
     teleport = true;
     this.socket.emit('reset', {x: newPlayerX, y: newPlayerY, playerId: self.ship.playerId});
+    this.resetButton.setVisible(false);
+    this.resetButton.setInteractive(false);
   });
   
   this.input.on('pointerdown', addBullet, this)
