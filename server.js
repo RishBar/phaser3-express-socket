@@ -83,6 +83,9 @@ io.on('connection', function (socket) {
     players[socket.id].count = countAmmoData.count;
     socket.broadcast.emit('updateAmmoCount', {playerId: countAmmoData.Id, count: countAmmoData.count});
   })
+  socket.on('reset', function (resetPlayerData) {
+    socket.broadcast.emit('resetPlayer', {x: resetPlayerData.x, y: resetPlayerData.y, playerId: resetPlayerData.playerId});
+  });
 });
  
 server.listen(8081, function () {

@@ -3,6 +3,7 @@
 // document.getElementById('version')
 //   .textContent = 'Phaser v' + Phaser.VERSION;
 
+
 var config = {
   type: Phaser.AUTO,
   width: 1024,
@@ -37,6 +38,7 @@ var ammoText;
 var healthScore;
 var gameOverText;
 var scoreText;
+var resetButton;
 
 let strafeLeft = true;
 let strafeRight = true;
@@ -53,6 +55,9 @@ function preload() {
   this.load.image('background', '../assets/background.png')
   this.load.image('train', '../assets/train.png')
   this.load.image('squareCollision', '../assets/square.png')
+  this.load.image('reset', '../assets/reset.png')
+  this.load.image('resetHovered', '../assets/reset_hovered.png')
+  this.load.image('resetPressed', '../assets/reset_pressed.png')
   this.load.image('wallCollision', '../assets/wall_collision.png')
   this.load.image('wallCollision2', '../assets/wall_collision2.png')
   this.load.image('wallCollision3', '../assets/wall_collision3.png')
@@ -76,6 +81,7 @@ function create() {
   this.cameras.main.setBounds(0, 0, 1506, 1506);
   const background = this.add.image(750, 750, 'background')
   background.depth = 0;
+  // let resetButton = this.add.image(190, 310, 'reset');
   const wall = this.physics.add.image(750, 750, 'wall')
   const train = this.physics.add.image(80, 120, 'train')
   const desk1 = this.physics.add.image(1026, 1436, 'squareCollision')
@@ -219,6 +225,7 @@ function create() {
     });
   });
   this.socket.on('bulletCollided', function (playerInfo) {
+    console.log("yes")
     self.bullets.getChildren().forEach(function (bullet) {
       if (bullet.bulletId === playerInfo.bulletId) {
         bullet.destroy();
@@ -228,6 +235,8 @@ function create() {
             self.ship.health -= 10;
             healthScore.setText(`Health: ${self.ship.health}`)
             gameOverText.setText("GAME OVER!!")
+            self.resetButton.setInteractive();
+            self.resetButton.setVisible(true);
             self.active = false;
             self.ship.setVisible(false);
             // var ID = Math.floor(Math.random() * 100000)
@@ -286,6 +295,11 @@ function create() {
       }
     })
   });
+  this.socket.on('resetPlayer', function(playerInfo) {
+    console.log(playerInfo.playerId)
+    console.log("reset");
+    addOtherPlayers(self, playerInfo);
+  });
   gameOverText = this.add.text(190, 310, '', { fontSize: '100px', fill: '#FFFFFF' })
   healthScore = this.add.text(10, 10, 'Health: 100', { fontSize: '32px', fill: '#FFFFFF' })
   ammoText = this.add.text(860, 10, "Ammo: 20", {fontSize: "32px", fill: "#FFFFFF"});
@@ -302,6 +316,45 @@ function create() {
   scoreText.scrollFactorX = 0
   scoreText.scrollFactorY = 0
   scoreText.depth = 100;
+
+  this.resetButton = this.add.image(520, 510, 'reset')
+  this.resetButton.scrollFactorX = 0
+  this.resetButton.scrollFactorY = 0
+  this.resetButton.depth = 100
+  this.resetButton.setVisible(false);
+
+  this.resetButton.on('pointerover', () => {
+    this.resetButton = this.add.image(520, 510, 'resetHovered')
+    this.resetButton.scrollFactorX = 0
+    this.resetButton.scrollFactorY = 0
+    this.resetButton.depth = 100
+})
+  this.resetButton.on('pointerout', () => {
+    this.resetButton = this.add.image(520, 510, 'reset')
+    this.resetButton.scrollFactorX = 0
+    this.resetButton.scrollFactorY = 0
+    this.resetButton.depth = 100
+})
+  this.resetButton.on('pointerdown', () => {
+    this.resetButton = this.add.image(520, 510, 'resetPressed');
+    this.resetButton.scrollFactorX = 0;
+    this.resetButton.scrollFactorY = 0;
+    this.resetButton.depth = 100;
+  });
+  this.resetButton.on('pointerup', () => {
+    this.resetButton.disableInteractive();
+    this.resetButton.setVisible(false);
+    var newPlayerX = Math.floor(Math.random() * 700) + 50;
+    var newPlayerY = Math.floor(Math.random() * 700) + 50;
+    resetPlayer(self, {x: newPlayerX, y: newPlayerY});
+    this.active = true;
+    healthScore.setText("Health: 100");
+    gameOverText.setText("");
+    ammoText.setText("Ammo: 20");
+    scoreText.setText("Score: 0");
+    teleport = true;
+    this.socket.emit('reset', {x: newPlayerX, y: newPlayerY, playerId: self.ship.playerId});
+  });
   
   this.input.on('pointerdown', addBullet, this)
   upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
@@ -345,7 +398,6 @@ function pickDifferentLocation (ammo) {
       newY = ammo.y - 50
     }
     replaceAmmo(this, {x: newX, y: newY, Id: 1}, 10)
-    //this.socket.emit('addNewAmmo', {x: newX, y: newY, Id: 1, ammoCount: 10})
   }
 }
 
@@ -545,6 +597,16 @@ function addPlayer(self, playerInfo) {
   self.cameras.main.startFollow(self.ship);
 }
 
+function resetPlayer(self, playerInfo) {
+  self.ship.setVisible(true);
+  self.ship.x = playerInfo.x
+  self.ship.y = playerInfo.y
+  self.ship.health = 100;
+  self.ship.ammoCount = 20;
+  self.ship.score = 0;
+  self.cameras.main.startFollow(self.ship);
+}
+
 
 function addOtherPlayers(self, playerInfo) {
   const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship');
@@ -554,6 +616,15 @@ function addOtherPlayers(self, playerInfo) {
   otherPlayer.setTint(0xff0000);
   otherPlayer.playerId = playerInfo.playerId;
   self.otherPlayers.add(otherPlayer);
+}
+
+function addOtherPlayersReset(self, playerInfo) {
+  const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship');
+  otherPlayer.health = 100;
+  otherPlayer.ammoCount = playerInfo.count;
+  otherPlayer.depth = 50;
+  otherPlayer.setTint(0xff0000);
+  otherPlayer.playerId = playerInfo.playerId;
 }
 
 function replaceAmmo(self, playerInfo, ammoAmmount) {
